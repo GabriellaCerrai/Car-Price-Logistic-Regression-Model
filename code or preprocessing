@@ -1,0 +1,93 @@
+# import packages
+import numpy as np 
+import pandas as pd 
+import seaborn as sns
+sns.set()
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+from sklearn.feature_selection import f_regression 
+from sklearn.preprocessing import StandardScaler
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+# Note: 'Price' is the dependent variable:
+rawdata = pd.read_csv('Car Data Regression.csv')
+  
+# Remember: axis = 0 removes row ; axis = 1 removes column:
+# model is not relevant for predictions 
+data = rawdata.drop(['Model'], axis = 1)
+
+# removing null values:
+# null values can be removed if they are <5% of the total observations
+  
+price_null   = data.isnull().sum().get('Price')
+engV_null = data.isnull().sum().get('EngineV')
+
+price_count   = total_count.get('Price')
+engV_count = total_count.get('EngineV')
+
+price_perc   = price_null / price_count * 100
+engV_perc = engV_null / engV_count * 100
+
+price_perc.round(2), engV_perc.round(2)
+
+data_no_null = data.dropna(axis=0)
+
+# dealing with numerical variables - PDFs:
+# Note: first plot must be using the original data
+  
+# try remove outliers to left to make it look more normal
+b = data_1['Mileage'].quantile(0.99)
+data_2 = data_1[data_1['Mileage'] < b]
+
+# research - take outliers of engine volume as being < 6.5L
+data_3 = data_2[data_2['EngineV'] < 6.5]
+sns.distplot(data_3['EngineV'])
+
+sns.distplot(data_no_null['Year'])
+# looks like it is skewed from all of the older cars 
+# note the direction of the sign when removing outliers
+c = data_no_null['Year'].quantile(0.01)
+# c = 1987 which correlates with what we are seeing on the plot
+data_4 = data_3[data_3['Year'] > c]
+sns.distplot(data_4['Year'])
+
+data_cleaned = data_4.reset_index(drop = True)
+
+# transform data:
+log_price = np.log(data_cleaned['Price'])
+data_cleaned['log_price'] = log_price
+
+# multicollinearity:
+# note: VIF = 1/(1-r2)
+variables = data_cleaned[['Year', 'Mileage', 'EngineV']]
+vif = pd.DataFrame()
+vif['VIF'] = [variance_inflation_factor(variables.values, i) for i in range(variables.shape[1])]
+vif['Features'] = variables.columns
+vif
+
+# remove 'Year' since it has such a high VIF (> 10):
+data_no_collin = data_cleaned.drop(['Year'], axis = 1)
+
+# VIF for EngineV looks quite high from previous table, look at updated VIF: 
+variables2 = data_cleaned[['Mileage', 'EngineV']]
+
+vif2 = pd.DataFrame()
+vif2['Updated VIF'] = [variance_inflation_factor(variables2.values ,i) for i in range(variables2.shape[1])]
+vif2['Features'] = variables2.columns
+
+vif2 # VIFs now are both in the acceptable range after removing 'Year'
+
+# dealing with categorical data: 
+data_w_dummies = pd.get_dummies(data_no_collin, drop_first = True)
+
+# rearrange to manually to get a new df: dep, indep num, indep dummies 
+
+# data_with_dummies.columns.values
+cols = ['log_price', 'Mileage', 'EngineV', 'Brand_BMW',
+       'Brand_Mercedes-Benz', 'Brand_Mitsubishi', 'Brand_Renault',
+       'Brand_Toyota', 'Brand_Volkswagen', 'Body_hatch', 'Body_other',
+       'Body_sedan', 'Body_vagon', 'Body_van', 'Engine Type_Gas',
+       'Engine Type_Other', 'Engine Type_Petrol', 'Registration_yes']
+
+data_preprocessed = data_w_dummies[cols]
+data_preprocessed.head()
