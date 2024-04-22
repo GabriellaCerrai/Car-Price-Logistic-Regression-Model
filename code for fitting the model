@@ -1,0 +1,87 @@
+# import packages
+import numpy as np 
+import pandas as pd 
+import seaborn as sns
+sns.set()
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+from sklearn.feature_selection import f_regression 
+from sklearn.preprocessing import StandardScaler
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+# The target(s) (dependent variable) is 'log price':
+targets = data_preprocessed['log_price']
+
+# The inputs are everything BUT the dependent variable, so we can simply drop it:
+inputs = data_preprocessed.drop(['log_price'],axis=1)
+
+# Import the scaling module:
+from sklearn.preprocessing import StandardScaler
+
+# Create a scaler object:
+scaler = StandardScaler()
+# Fit the inputs :
+scaler.fit(inputs)
+
+# Scale the features:
+inputs_scaled = scaler.transform(inputs)
+
+# Import the module for the split:
+from sklearn.model_selection import train_test_split
+
+# Split the variables with an 80-20 split and some random state
+# To have the same split as mine, use random_state = 365
+x_train, x_test, y_train, y_test = train_test_split(inputs_scaled, targets, test_size=0.2, random_state=365)
+
+# Create a linear regression object:
+reg = LinearRegression()
+
+# Fit the regression with the scaled TRAIN inputs and targets:
+reg.fit(x_train,y_train)
+
+# predictions:
+y_hat = reg.predict(x_train)
+
+# plot the predictions - want to see a 45 degree line 
+plt.scatter(y_train, y_hat)
+plt.xlabel('Targets (y_train)',size=18)
+plt.ylabel('Predictions (y_hat)',size=18)
+plt.xlim(6,13)
+plt.ylim(6,13)
+plt.show()
+
+# Find the R-squared of the model
+reg.score(x_train,y_train)
+
+# Obtain the bias (intercept) of the regression
+reg.intercept_
+
+# Obtain the weights (coefficients) of the regression
+reg.coef_
+
+# Create a regression summary where we can compare them with one-another
+reg_summary = pd.DataFrame(inputs.columns.values, columns=['Features'])
+reg_summary['Weights'] = reg.coef_
+reg_summary
+
+# TESTING THE MODEL: 
+y_hat_test = reg.predict(x_test)
+
+# creating a scatter plot of the predictions: 
+# (play around with alpha to adjust th opacity of the points)
+plt.scatter(y_test, y_hat_test, alpha=0.2)
+plt.xlabel('Targets (y_test)',size=18)
+plt.ylabel('Predictions (y_hat_test)',size=18)
+plt.xlim(6,13)
+plt.ylim(6,13)
+plt.show()
+
+# create a data from for the predictions; 
+df_pred = pd.DataFrame(np.exp(y_hat_test), columns=['Prediction'])
+df_pred['Target'] = np.exp(y_test)
+
+df_pred 
+# alot of missing values due to dropping null values, so reset index:
+y_test = y_test.reset_index(drop=True)
+df_pred['Target'] = np.exp(y_test)
+df_pred
